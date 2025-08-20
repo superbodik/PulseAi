@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Статистика чатов - PulseAi</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stat-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .stat-number {
+            font-size: 3em;
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+        .stat-description {
+            color: #666;
+            line-height: 1.4;
+        }
+        .active-stat { color: #4CAF50; }
+        .closed-stat { color: #f44336; }
+        .total-stat { color: #2196F3; }
+        .nav-link {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        .nav-link:hover {
+            background-color: #45a049;
+        }
+        .info-card {
+            background-color: #e3f2fd;
+            border: 1px solid #2196F3;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .info-title {
+            font-weight: bold;
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        .chat-lists {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .chat-list-card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .chat-list-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        .active-title {
+            color: #4CAF50;
+            border-bottom-color: #4CAF50;
+        }
+        .closed-title {
+            color: #f44336;
+            border-bottom-color: #f44336;
+        }
+        .chat-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border-left: 4px solid #ddd;
+        }
+        .chat-item.active {
+            background-color: #e8f5e8;
+            border-left-color: #4CAF50;
+        }
+        .chat-item.closed {
+            background-color: #ffeaea;
+            border-left-color: #f44336;
+        }
+        .chat-username {
+            font-weight: bold;
+            color: #333;
+        }
+        .chat-details {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .empty-list {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Статистика чатов поддержки PulseAi</h1>
+        <div>
+            <span id="connection-status">🟡 Подключение...</span>
+            <span id="last-update" style="margin-left: 20px; font-size: 0.9em;"></span>
+        </div>
+        <div>
+            <a href="/" class="nav-link">← Назад к дашборду</a>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-title">🟢 Активные чаты</div>
+            <div class="stat-number active-stat">{{ chat_stats.active_chats }}</div>
+            <div class="stat-description">
+                Количество чатов, где последнее сообщение было отправлено менее 5 минут назад
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-title">🔴 Закрытые чаты</div>
+            <div class="stat-number closed-stat">{{ chat_stats.closed_chats }}</div>
+            <div class="stat-description">
+                Количество чатов, неактивных более 5 минут. При новом сообщении от пользователя создается новый чат
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-title">👥 Всего пользователей</div>
+            <div class="stat-number total-stat">{{ chat_stats.total_users }}</div>
+            <div class="stat-description">
+                Общее количество уникальных пользователей, которые когда-либо писали в поддержку
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-title">💬 Среднее время чата</div>
+            <div class="stat-number">~5</div>
+            <div class="stat-description">
+                минут - автоматическое закрытие чата при отсутствии активности
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-lists">
+        <div class="chat-list-card">
+            <div class="chat-list-title active-title">🟢 Активные чаты ({{ chat_stats.active_chats }})</div>
+            <div id="active-chats-list">
+                {% if chat_stats.active_chat_list %}
+                    {% for chat in chat_stats.active_chat_list %}
+                    <div class="chat-item active">
+                        <div class="chat-username">{{ chat.username }}</div>
+                        <div class="chat-details">
+                            Чат #{{ chat.chat_id }} • Последняя активность: {{ chat.last_activity[:19] }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-list">Нет активных чатов</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="chat-list-card">
+            <div class="chat-list-title closed-title">🔴 Закрытые чаты ({{ chat_stats.closed_chats }})</div>
+            <div id="closed-chats-list">
+                {% if chat_stats.closed_chat_list %}
+                    {% for chat in chat_stats.closed_chat_list %}
+                    <div class="chat-item closed">
+                        <div class="chat-username">{{ chat.username }}</div>
+                        <div class="chat-details">
+                            Чат #{{ chat.chat_id }} • Последняя активность: {{ chat.last_activity[:19] }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-list">Нет закрытых чатов</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="info-card">
+        <div class="info-title">ℹ️ Как работает система чатов:</div>
+        <ul>
+            <li><strong>Новый чат:</strong> создается при первом сообщении пользователя или после таймаута</li>
+            <li><strong>Активный чат:</strong> последнее сообщение было менее 5 минут назад</li>
+            <li><strong>Закрытый чат:</strong> неактивность более 5 минут</li>
+            <li><strong>Нумерация:</strong> каждый новый чат пользователя получает инкрементальный номер</li>
+            <li><strong>Автообновление:</strong> при каждом сообщении время активности обновляется</li>
+        </ul>
+    </div>
+
+    <script>
+        let ws = null;
+
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = function(event) {
+                console.log('WebSocket подключен');
+                document.getElementById('connection-status').textContent = '🟢 Онлайн';
+            };
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.type === 'update') {
+                    updateStats(data.data);
+                }
+            };
+            
+            ws.onclose = function(event) {
+                console.log('WebSocket отключен');
+                document.getElementById('connection-status').textContent = '🔴 Переподключение...';
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        function updateStats(data) {
+            // Обновляем числовые показатели
+            document.querySelector('.active-stat').textContent = data.chat_stats.active_chats;
+            document.querySelector('.closed-stat').textContent = data.chat_stats.closed_chats;
+            document.querySelector('.total-stat').textContent = data.chat_stats.total_users;
+            document.getElementById('last-update').textContent = `Обновлено: ${data.timestamp}`;
+
+            // Обновляем заголовки списков
+            document.querySelector('.active-title').textContent = `🟢 Активные чаты (${data.chat_stats.active_chats})`;
+            document.querySelector('.closed-title').textContent = `🔴 Закрытые чаты (${data.chat_stats.closed_chats})`;
+
+            // Обновляем списки чатов
+            updateChatList('active-chats-list', data.chat_stats.active_chat_list, 'active');
+            updateChatList('closed-chats-list', data.chat_stats.closed_chat_list, 'closed');
+        }
+
+        function updateChatList(elementId, chatList, type) {
+            const container = document.getElementById(elementId);
+            
+            if (chatList && chatList.length > 0) {
+                container.innerHTML = chatList.map(chat => `
+                    <div class="chat-item ${type}">
+                        <div class="chat-username">${chat.username}</div>
+                        <div class="chat-details">
+                            Чат #${chat.chat_id} • Последняя активность: ${chat.last_activity.substring(0, 19)}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = `<div class="empty-list">Нет ${type === 'active' ? 'активных' : 'закрытых'} чатов</div>`;
+            }
+        }
+
+        // Альтернативное обновление через AJAX
+        function fallbackUpdate() {
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(data => updateStats(data))
+                .catch(error => console.error('Ошибка:', error));
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            connectWebSocket();
+            setInterval(fallbackUpdate, 15000); // Резервное обновление каждые 15 секунд
+        });
+    </script>
+</body>
+</html>

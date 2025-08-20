@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shift: {{ shift }}</title>
+</head>
+<body>
+    <h2>Shift: {{ shift }}</h2>
+
+    <h3>Incoming messages</h3>
+        <ul>
+        {% for msg in incoming %}
+            <li>[{{ msg.timestamp }}] {{ msg.message }}</li>
+        {% endfor %}
+        </ul>
+
+    <h3>Outgoing messages</h3>
+        <ul>
+        {% for msg in outgoing %}
+            <li>[{{ msg.timestamp }}] {{ msg.message }}</li>
+        {% endfor %}
+        </ul>
+
+    <a href="/">Back to Dashboard</a>
+</body>
+</html>

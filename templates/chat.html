@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Чат користувача {{ user_id }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #4CAF50; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        a.button { text-decoration: none; background: #4CAF50; color: white; padding: 5px 10px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h2>Чат користувача {{ user_id }}</h2>
+    <a class="button" href="/">Назад до всіх повідомлень</a>
+
+    <h3>Вхідні повідомлення</h3>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Message</th>
+        </tr>
+        {% for msg in incoming %}
+        <tr>
+            <td>{{ msg[0] }}</td>
+            <td>{{ msg[3] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h3>Вихідні повідомлення</h3>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Message</th>
+        </tr>
+        {% for msg in outgoing %}
+        <tr>
+            <td>{{ msg[0] }}</td>
+            <td>{{ msg[3] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

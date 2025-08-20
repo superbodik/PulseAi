@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PulseAi Dashboard</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .stats-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .nav-link1{
+            top: 30px;
+
+        }
+        .stat-card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            flex: 1;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        .messages-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .message-item {
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+        }
+        .message-item:last-child {
+            border-bottom: none;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .username {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .chat-id {
+            background-color: #e8f5e8;
+            color: #2e7d2e;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .incoming { border-left: 4px solid #2196F3; padding-left: 15px; }
+        .outgoing { border-left: 4px solid #FF9800; padding-left: 15px; }
+        .nav-link {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        .nav-link:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>PulseAi Dashboard - {{ shift }}</h1>
+        <div>
+            <span id="connection-status">🟡 Подключение...</span>
+            <span id="last-update" style="margin-left: 20px; margin-top: 20px; font-size: 0.9em;">Загрузка...</span>
+        </div>
+        <div>
+            <a href="/stats" class="nav-link1">Детальная статистика</a>
+        </div>
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-number">{{ chat_stats.active_chats }}</div>
+            <div class="stat-label">Активные чаты</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ chat_stats.closed_chats }}</div>
+            <div class="stat-label">Закрытые чаты</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ chat_stats.total_users }}</div>
+            <div class="stat-label">Всего пользователей</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ incoming|length + outgoing|length }}</div>
+            <div class="stat-label">Сообщений за смену</div>
+        </div>
+    </div>
+
+    <div class="messages-section">
+        <h2>Входящие сообщения ({{ incoming|length }})</h2>
+        {% for msg in incoming %}
+        <div class="message-item incoming">
+            <span class="timestamp">[{{ msg.timestamp }}]</span>
+            {% if msg.username %}
+                <span class="username">{{ msg.username }}</span>
+                {% if msg.chat_id %}
+                    <span class="chat-id">Чат #{{ msg.chat_id }}</span>
+                {% endif %}
+            {% endif %}
+            <div>{{ msg.message }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="messages-section">
+        <h2>Исходящие сообщения ({{ outgoing|length }})</h2>
+        {% for msg in outgoing %}
+        <div class="message-item outgoing">
+            <span class="timestamp">[{{ msg.timestamp }}]</span>
+            {% if msg.username %}
+                <span class="username">{{ msg.username }}</span>
+                {% if msg.chat_id %}
+                    <span class="chat-id">Чат #{{ msg.chat_id }}</span>
+                {% endif %}
+            {% endif %}
+            <div>{{ msg.message }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    <script>
+        // WebSocket соединение для обновлений в реальном времени
+        let ws = null;
+        let reconnectInterval = null;
+
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = function(event) {
+                console.log('WebSocket подключен');
+                document.getElementById('connection-status').textContent = '🟢 Онлайн';
+                clearInterval(reconnectInterval);
+            };
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.type === 'update') {
+                    updateStats(data.data);
+                } else if (data.type === 'new_message') {
+                    showNotification(data);
+                }
+            };
+            
+            ws.onclose = function(event) {
+                console.log('WebSocket отключен');
+                document.getElementById('connection-status').textContent = '🔴 Переподключение...';
+                // Переподключение через 3 секунды
+                reconnectInterval = setInterval(connectWebSocket, 3000);
+            };
+            
+            ws.onerror = function(error) {
+                console.error('WebSocket ошибка:', error);
+            };
+        }
+
+        function updateStats(data) {
+            // Обновляем статистику чатов
+            document.querySelector('.stat-card:nth-child(1) .stat-number').textContent = data.chat_stats.active_chats;
+            document.querySelector('.stat-card:nth-child(2) .stat-number').textContent = data.chat_stats.closed_chats;
+            document.querySelector('.stat-card:nth-child(3) .stat-number').textContent = data.chat_stats.total_users;
+            document.querySelector('.stat-card:nth-child(4) .stat-number').textContent = data.total_messages;
+            
+            // Обновляем время последнего обновления
+            document.getElementById('last-update').textContent = `Последнее обновление: ${data.timestamp}`;
+        }
+
+        function showNotification(data) {
+            // Показываем уведомление о новом сообщении
+            if (Notification.permission === 'granted') {
+                new Notification(`Новое ${data.message_type === 'incoming' ? 'входящее' : 'исходящее'} сообщение`, {
+                    body: data.data.message.substring(0, 100) + '...',
+                    icon: '/favicon.ico'
+                });
+            }
+        }
+
+        // Запрос разрешения на уведомления
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        // Альтернативное обновление через AJAX (если WebSocket не работает)
+        function fallbackUpdate() {
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(data => updateStats(data))
+                .catch(error => console.error('Ошибка получения данных:', error));
+        }
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            requestNotificationPermission();
+            connectWebSocket();
+            
+            // Резервное обновление каждые 10 секунд
+            setInterval(fallbackUpdate, 10000);
+        });
+
+        // Автоматическое обновление страницы каждые 5 минут
+        setTimeout(function() {
+            window.location.reload();
+        }, 300000);
+    </script>
+</body>
+</html>
