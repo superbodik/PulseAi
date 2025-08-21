@@ -20,7 +20,7 @@ def run_web():
     """Запускает веб-сервер"""
     try:
         print("Запуск веб-сервера...")
-        uvicorn.run("web_app:app", host="127.0.0.1", port=8000, reload=False, log_level="info")
+        uvicorn.run("web_app:app", host="0.0.0.0", port=80, reload=False, log_level="info")
     except KeyboardInterrupt:
         print("Веб-сервер остановлен пользователем")
     except Exception as e:
@@ -140,4 +140,5 @@ if __name__ == "__main__":
         print("   1. Перезагрузить компьютер")
         print("   2. Переустановить зависимости: pip install telethon fastapi uvicorn jinja2")
         
+
     input("\\nНажмите Enter для выхода...")
