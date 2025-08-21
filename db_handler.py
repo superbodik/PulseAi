@@ -4,10 +4,7 @@ from datetime import datetime, timedelta
 from contextlib import contextmanager
 import json
 
-
 DB_PATH = "pulseai.db"
-DB_FILE = "filetets.db"
-
 CHAT_TIMEOUT_MINUTES = 5
 
 # Фильтры
@@ -17,8 +14,6 @@ EXCLUDED_USERS = [
     'NewsChannel',
     'AutoBot',
     'news_updates'
-    'kpszsu'
-
 ]
 
 EXCLUDED_KEYWORDS = [
@@ -31,9 +26,6 @@ EXCLUDED_KEYWORDS = [
     'Ударні БпЛА',
     'шахедів',
     'курсом на'
-    'Пуски '
-    'ворожий розвідувальний  '
-    'Загроза застосування  '
 ]
 
 GREETINGS = [
@@ -70,25 +62,7 @@ def init_database():
                 last_activity TEXT
             )
         ''')
-        with sqlite3.connect(DB_FILE) as conn:
-            cur = conn.cursor()
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT UNIQUE NOT NULL,
-                    email TEXT UNIQUE NOT NULL
-                )
-            """)
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS messages (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER NOT NULL,
-                    content TEXT NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users (id)
-                )
-            """)
-        conn.commit()
+        
         
         # Создаем индексы для быстрого поиска
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_username ON messages(username)')
@@ -296,44 +270,6 @@ def cleanup_old_messages(days=30):
         conn.commit()
         print(f"Удалено {deleted} старых сообщений")
 
-def add_user(username: str, email: str):
-    """Добавить пользователя"""
-    with sqlite3.connect(DB_FILE) as conn:
-        cur = conn.cursor()
-        cur.execute("INSERT INTO users (username, email) VALUES (?, ?)", (username, email))
-        conn.commit()
-
-
-def get_users():
-    """Получить всех пользователей"""
-    with sqlite3.connect(DB_FILE) as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT id, username, email FROM users")
-        return cur.fetchall()
-
-
-def add_message(user, message, chat_id=None, timestamp=None, extra=None):
-    """Добавить сообщение"""
-    with sqlite3.connect(DB_FILE) as conn:
-        cur = conn.cursor()
-        cur.execute("INSERT INTO messages (user_id, content) VALUES (?, ?)", (user, message))
-        conn.commit()
-
-
-def get_messages(limit: int = 50):
-    """Получить последние сообщения"""
-    with sqlite3.connect(DB_FILE) as conn:
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT m.id, u.username, m.content, m.created_at
-            FROM messages m
-            JOIN users u ON m.user_id = u.id
-            ORDER BY m.created_at DESC
-            LIMIT ?
-        """, (limit,))
-        return cur.fetchall()
-
 # Инициализируем БД при импорте
 init_database()
-
 load_filters_config()
