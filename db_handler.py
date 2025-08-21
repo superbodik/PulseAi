@@ -1,175 +1,41 @@
+import sqlite3
 import os
-import json
 from datetime import datetime, timedelta
+from contextlib import contextmanager
+import json
 
-LEARNING_DIR = "Learning"
-CHATS_DIR = "Chats"
-os.makedirs(LEARNING_DIR, exist_ok=True)
-os.makedirs(CHATS_DIR, exist_ok=True)
+
+DB_PATH = "pulseai.db"
+DB_FILE = "filetets.db"
 
 CHAT_TIMEOUT_MINUTES = 5
 
-def _get_file_path(shift_name):
-    return os.path.join(LEARNING_DIR, f"{shift_name}.json")
+# Фильтры
+EXCLUDED_USERS = [
+    'news_chrkssy',
+    'GmailBot',
+    'NewsChannel',
+    'AutoBot',
+    'news_updates'
+    'kpszsu'
 
-def _get_chats_file():
-    return os.path.join(CHATS_DIR, "active_chats.json")
+]
 
-def _load_active_chats():
-    """Загружает активные чаты из файла"""
-    chats_file = _get_chats_file()
-    if os.path.exists(chats_file):
-        try:
-            with open(chats_file, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except json.JSONDecodeError:
-            return {}
-    return {}
+EXCLUDED_KEYWORDS = [
+    '✉️ PULSE <admin@rideatom.com>',
+    'Alert! Subaccount:',
+    'Vehicle number',
+    'moving!',
+    'no-go zone',
+    'Група ворожих БпЛА',
+    'Ударні БпЛА',
+    'шахедів',
+    'курсом на'
+    'Пуски '
+    'ворожий розвідувальний  '
+    'Загроза застосування  '
+]
 
-def _save_active_chats(chats_data):
-    """Сохраняет активные чаты в файл"""
-    chats_file = _get_chats_file()
-    with open(chats_file, "w", encoding="utf-8") as f:
-        json.dump(chats_data, f, ensure_ascii=False, indent=2)
-
-def _is_chat_expired(last_activity_str):
-    """Проверяет, истек ли чат (более 5 минут без активности)"""
-    try:
-        last_activity = datetime.fromisoformat(last_activity_str)
-        return datetime.now() - last_activity > timedelta(minutes=CHAT_TIMEOUT_MINUTES)
-    except:
-        return True
-
-def _get_or_create_chat_id(username):
-    """Получает ID активного чата или создает новый"""
-    chats_data = _load_active_chats()
-    now = datetime.now().isoformat()
-    
-    if username in chats_data:
-        chat_info = chats_data[username]
-        # Проверяем, не истек ли чат
-        if not _is_chat_expired(chat_info["last_activity"]):
-            # Чат еще активен, обновляем время последней активности
-            chat_info["last_activity"] = now
-            _save_active_chats(chats_data)
-            return chat_info["chat_id"]
-        else:
-            # Чат истек, создаем новый
-            chat_info["chat_id"] += 1
-    else:
-        # Новый пользователь
-        chats_data[username] = {"chat_id": 1}
-    
-    # Обновляем время активности и сохраняем
-    chats_data[username]["last_activity"] = now
-    _save_active_chats(chats_data)
-    
-    return chats_data[username]["chat_id"]
-
-def get_chat_statistics():
-    """Возвращает статистику по чатам"""
-    chats_data = _load_active_chats()
-    active_chats = 0
-    closed_chats = 0
-    
-    for username, chat_info in chats_data.items():
-        if _is_chat_expired(chat_info["last_activity"]):
-            closed_chats += 1
-        else:
-            active_chats += 1
-    
-    return {
-        "active_chats": active_chats,
-        "closed_chats": closed_chats,
-        "total_users": len(chats_data)
-    }
-
-def add_incoming(message, shift, username=None):
-    path = _get_file_path(shift)
-    chat_id = None
-    if username:
-        chat_id = _get_or_create_chat_id(username)
-    _add_message(path, message, "incoming", username, chat_id)
-
-def add_outgoing(message, shift, username=None):
-    path = _get_file_path(shift)
-    chat_id = None
-    if username:
-        # Для исходящих сообщений используем существующий chat_id
-        chats_data = _load_active_chats()
-        if username in chats_data and not _is_chat_expired(chats_data[username]["last_activity"]):
-            chat_id = chats_data[username]["chat_id"]
-            # Обновляем время активности
-            chats_data[username]["last_activity"] = datetime.now().isoformat()
-            _save_active_chats(chats_data)
-    _add_message(path, message, "outgoing", username, chat_id)
-
-def _add_message(path, message, key, username=None, chat_id=None):
-    timestamp = datetime.now().isoformat()
-    data = {"incoming": [], "outgoing": []}
-
-    if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
-            try:
-                data = json.load(f)
-            except json.JSONDecodeError:
-                data = {"incoming": [], "outgoing": []}
-
-    message_entry = {
-        "message": message, 
-        "timestamp": timestamp,
-        "username": username,
-        "chat_id": chat_id
-    }
-    
-    data[key].append(message_entry)
-
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-def get_shift_messages(shift_name):
-    """Возвращает сообщения смены в старом формате для совместимости"""
-    path = _get_file_path(shift_name)
-    if not os.path.exists(path):
-        return [], []
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    return data.get("incoming", []), data.get("outgoing", [])
-
-def get_detailed_chat_statistics():
-    """Возвращает детальную статистику по чатам с именами пользователей"""
-    chats_data = _load_active_chats()
-    active_chats = []
-    closed_chats = []
-    
-    print(f"DEBUG: Загружено чатов: {len(chats_data)}")
-    
-    for username, chat_info in chats_data.items():
-        print(f"DEBUG: Пользователь {username}, последняя активность: {chat_info['last_activity']}")
-        
-        chat_entry = {
-            "username": username,
-            "chat_id": chat_info["chat_id"],
-            "last_activity": chat_info["last_activity"]
-        }
-        
-        if _is_chat_expired(chat_info["last_activity"]):
-            closed_chats.append(chat_entry)
-            print(f"DEBUG: {username} - закрытый чат")
-        else:
-            active_chats.append(chat_entry)
-            print(f"DEBUG: {username} - активный чат")
-    
-    result = {
-        "active_chats": len(active_chats),
-        "closed_chats": len(closed_chats),
-        "total_users": len(chats_data),
-        "active_chat_list": active_chats,
-        "closed_chat_list": closed_chats
-    }
-    
-    print(f"DEBUG: Результат: {result}")
-    return result
 GREETINGS = [
     "Гарного дня😊", "Гарного дня!", "Гарного вечора!", "Гарного вечора😊",
     "Доброї ночі!", "Доброї ночі😊", "Будь ласка, Гарного дня😊", "Будь ласка, Гарного дня!",
@@ -177,16 +43,296 @@ GREETINGS = [
     "Будь ласка, Доброї ночі!", "Будь ласка, Доброї ночі😊"
 ]
 
-def force_close_chat(username):
-    """Принудительно закрывает чат пользователя"""
-    chats_data = _load_active_chats()
-    if username in chats_data:
-        # Устанавливаем время активности на час назад, чтобы чат считался закрытым
-        old_time = datetime.now() - timedelta(hours=1)
-        chats_data[username]["last_activity"] = old_time.isoformat()
-        _save_active_chats(chats_data)
-        print(f"Чат с {username} принудительно закрыт")
+def init_database():
+    """Создает таблицы базы данных"""
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        
+        # Таблица сообщений
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT,
+                message TEXT,
+                timestamp TEXT,
+                message_type TEXT,
+                shift_name TEXT,
+                chat_id INTEGER,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # Таблица активных чатов
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS active_chats (
+                username TEXT PRIMARY KEY,
+                chat_id INTEGER,
+                last_activity TEXT
+            )
+        ''')
+        with sqlite3.connect(DB_FILE) as conn:
+            cur = conn.cursor()
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    email TEXT UNIQUE NOT NULL
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    content TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users (id)
+                )
+            """)
+        conn.commit()
+        
+        # Создаем индексы для быстрого поиска
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_username ON messages(username)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_timestamp ON messages(timestamp)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_shift ON messages(shift_name)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_type ON messages(message_type)')
+        
+        conn.commit()
+
+@contextmanager
+def get_db_connection():
+    """Контекстный менеджер для работы с БД"""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+def load_filters_config():
+    """Загружает конфигурацию фильтров из файла"""
+    try:
+        with open("filters_config.json", "r", encoding="utf-8") as f:
+            config = json.load(f)
+            global EXCLUDED_USERS, EXCLUDED_KEYWORDS
+            EXCLUDED_USERS = config.get("excluded_users", EXCLUDED_USERS)
+            EXCLUDED_KEYWORDS = config.get("excluded_keywords", EXCLUDED_KEYWORDS)
+    except FileNotFoundError:
+        pass
+
+def save_filters_config():
+    """Сохраняет конфигурацию фильтров в файл"""
+    config = {
+        "excluded_users": EXCLUDED_USERS,
+        "excluded_keywords": EXCLUDED_KEYWORDS
+    }
+    with open("filters_config.json", "w", encoding="utf-8") as f:
+        json.dump(config, f, ensure_ascii=False, indent=2)
+
+def should_exclude_message(username, message):
+    """Проверяет фильтры"""
+    if username in EXCLUDED_USERS:
+        return True
+    
+    for keyword in EXCLUDED_KEYWORDS:
+        if keyword in message:
+            return True
+    
+    if message.startswith(('✉️', '🛵', '❗️')):
+        return True
+    
+    if len(message) > 1500:
+        return True
+    
+    return False
 
 def is_greeting_message(message):
     """Проверяет, является ли сообщение прощальным"""
     return message.strip() in GREETINGS
+
+def force_close_chat(username):
+    """Принудительно закрывает чат пользователя"""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        old_time = (datetime.now() - timedelta(hours=1)).isoformat()
+        cursor.execute('UPDATE active_chats SET last_activity = ? WHERE username = ?',
+                     (old_time, username))
+        conn.commit()
+        print(f"Чат с {username} принудительно закрыт")
+
+def add_incoming(message, shift, username=None):
+    if should_exclude_message(username or 'unknown', message):
+        print(f"Сообщение от {username} отфильтровано")
+        return
+    
+    chat_id = get_or_create_chat_id(username) if username else None
+    add_message(message, shift, username, 'incoming', chat_id)
+
+def add_outgoing(message, shift, username=None):
+    if should_exclude_message(username or 'unknown', message):
+        print(f"Исходящее для {username} отфильтровано")
+        return
+    
+    chat_id = get_or_create_chat_id(username) if username else None
+    add_message(message, shift, username, 'outgoing', chat_id)
+
+def add_message(message, shift, username, message_type, chat_id):
+    """Добавляет сообщение в БД"""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO messages (username, message, timestamp, message_type, shift_name, chat_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (username, message, datetime.now().isoformat(), message_type, shift, chat_id))
+        conn.commit()
+
+def get_or_create_chat_id(username):
+    """Получает или создает ID чата"""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT chat_id, last_activity FROM active_chats WHERE username = ?', (username,))
+        row = cursor.fetchone()
+        
+        if row:
+            last_activity = datetime.fromisoformat(row['last_activity'])
+            if datetime.now() - last_activity < timedelta(minutes=CHAT_TIMEOUT_MINUTES):
+                cursor.execute('UPDATE active_chats SET last_activity = ? WHERE username = ?',
+                             (datetime.now().isoformat(), username))
+                conn.commit()
+                return row['chat_id']
+            else:
+                new_chat_id = row['chat_id'] + 1
+                cursor.execute('UPDATE active_chats SET chat_id = ?, last_activity = ? WHERE username = ?',
+                             (new_chat_id, datetime.now().isoformat(), username))
+                conn.commit()
+                return new_chat_id
+        else:
+            cursor.execute('INSERT INTO active_chats (username, chat_id, last_activity) VALUES (?, 1, ?)',
+                         (username, datetime.now().isoformat()))
+            conn.commit()
+            return 1
+
+def get_chat_statistics():
+    """Возвращает статистику чатов"""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT COUNT(*) as total FROM active_chats')
+        total = cursor.fetchone()['total']
+        
+        cutoff = (datetime.now() - timedelta(minutes=CHAT_TIMEOUT_MINUTES)).isoformat()
+        cursor.execute('SELECT COUNT(*) as active FROM active_chats WHERE last_activity > ?', (cutoff,))
+        active = cursor.fetchone()['active']
+        
+        return {
+            "active_chats": active,
+            "closed_chats": total - active,
+            "total_users": total
+        }
+
+def get_detailed_chat_statistics():
+    """Возвращает детальную статистику чатов"""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        
+        cutoff = (datetime.now() - timedelta(minutes=CHAT_TIMEOUT_MINUTES)).isoformat()
+        
+        cursor.execute('SELECT username, chat_id, last_activity FROM active_chats WHERE last_activity > ? ORDER BY last_activity DESC', (cutoff,))
+        active_chats = [dict(row) for row in cursor.fetchall()]
+        
+        cursor.execute('SELECT username, chat_id, last_activity FROM active_chats WHERE last_activity <= ? ORDER BY last_activity DESC', (cutoff,))
+        closed_chats = [dict(row) for row in cursor.fetchall()]
+        
+        return {
+            "active_chats": len(active_chats),
+            "closed_chats": len(closed_chats),
+            "total_users": len(active_chats) + len(closed_chats),
+            "active_chat_list": active_chats,
+            "closed_chat_list": closed_chats
+        }
+
+def get_shift_messages(shift_name):
+    """Получает сообщения смены"""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT username, message, timestamp, chat_id 
+            FROM messages 
+            WHERE shift_name = ? AND message_type = 'incoming'
+            ORDER BY timestamp DESC
+        ''', (shift_name,))
+        incoming = [dict(row) for row in cursor.fetchall()]
+        
+        cursor.execute('''
+            SELECT username, message, timestamp, chat_id 
+            FROM messages 
+            WHERE shift_name = ? AND message_type = 'outgoing'
+            ORDER BY timestamp DESC
+        ''', (shift_name,))
+        outgoing = [dict(row) for row in cursor.fetchall()]
+        
+        return incoming, outgoing
+
+def get_recent_messages(limit=50):
+    """Получает последние сообщения для главной страницы"""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT username, message, timestamp, message_type, chat_id
+            FROM messages 
+            ORDER BY timestamp DESC 
+            LIMIT ?
+        ''', (limit,))
+        return [dict(row) for row in cursor.fetchall()]
+
+def cleanup_old_messages(days=30):
+    """Удаляет старые сообщения (старше N дней)"""
+    cutoff_date = (datetime.now() - timedelta(days=days)).isoformat()
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM messages WHERE timestamp < ?', (cutoff_date,))
+        deleted = cursor.rowcount
+        conn.commit()
+        print(f"Удалено {deleted} старых сообщений")
+
+def add_user(username: str, email: str):
+    """Добавить пользователя"""
+    with sqlite3.connect(DB_FILE) as conn:
+        cur = conn.cursor()
+        cur.execute("INSERT INTO users (username, email) VALUES (?, ?)", (username, email))
+        conn.commit()
+
+
+def get_users():
+    """Получить всех пользователей"""
+    with sqlite3.connect(DB_FILE) as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT id, username, email FROM users")
+        return cur.fetchall()
+
+
+def add_message(user_id: int, content: str):
+    """Добавить сообщение"""
+    with sqlite3.connect(DB_FILE) as conn:
+        cur = conn.cursor()
+        cur.execute("INSERT INTO messages (user_id, content) VALUES (?, ?)", (user_id, content))
+        conn.commit()
+
+
+def get_messages(limit: int = 50):
+    """Получить последние сообщения"""
+    with sqlite3.connect(DB_FILE) as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT m.id, u.username, m.content, m.created_at
+            FROM messages m
+            JOIN users u ON m.user_id = u.id
+            ORDER BY m.created_at DESC
+            LIMIT ?
+        """, (limit,))
+        return cur.fetchall()
+
+# Инициализируем БД при импорте
+init_database()
+load_filters_config()

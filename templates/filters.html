@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фільтри - PulseAi Support</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4f46e5;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-link {
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            color: #64748b;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: #4f46e5;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .filter-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .filter-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 4px solid #e5e7eb;
+        }
+
+        .filter-item.active {
+            border-left-color: #10b981;
+            background: #ecfdf5;
+        }
+
+        .filter-text {
+            font-family: monospace;
+            background: rgba(0,0,0,0.05);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .add-filter {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .filter-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4338ca;
+        }
+
+        .info-panel {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 2rem;
+        }
+
+        .info-title {
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 0.5rem;
+        }
+        .notification.warning {
+        background: var(--warning-color);
+        color: white;
+    }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <i class="fas fa-bolt"></i> PulseAi Support
+        </div>
+        <div class="nav-menu">
+            <a href="/" class="nav-link">
+                <i class="fas fa-home"></i> Головна
+            </a>
+            <a href="/stats" class="nav-link">
+                <i class="fas fa-chart-bar"></i> Статистика
+            </a>
+            <a href="/analytics" class="nav-link">
+                <i class="fas fa-analytics"></i> Аналітика
+            </a>
+            <a href="/filters" class="nav-link active">
+                <i class="fas fa-filter"></i> Фільтри
+            </a>
+            <span class="nav-link">
+                <i class="fas fa-user"></i> {{ user.display_name }}
+            </span>
+            <a href="/logout" class="nav-link" style="background: #ef4444; color: white;">
+                <i class="fas fa-sign-out-alt"></i> Вихід
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="fas fa-filter"></i> Налаштування фільтрів
+            </h1>
+            <p style="color: #64748b;">Управління фільтрацією повідомлень та користувачів</p>
+        </div>
+
+        <div class="filter-section">
+            <h2 class="section-title">
+                <i class="fas fa-user-slash"></i> Виключені користувачі
+            </h2>
+            <div class="filter-list" id="excluded-users">
+                <div class="filter-item active">
+                    <span class="filter-text">news_chrkssy</span>
+                    <button class="btn btn-danger" onclick="removeFilter('user', 'news_chrkssy')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="filter-item active">
+                    <span class="filter-text">GmailBot</span>
+                    <button class="btn btn-danger" onclick="removeFilter('user', 'GmailBot')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="filter-item active">
+                    <span class="filter-text">NewsChannel</span>
+                    <button class="btn btn-danger" onclick="removeFilter('user', 'NewsChannel')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="add-filter">
+                <input type="text" class="filter-input" id="new-user" placeholder="Введіть ім'я користувача для блокування">
+                <button class="btn btn-primary" onclick="addFilter('user')">
+                    <i class="fas fa-plus"></i> Додати
+                </button>
+            </div>
+        </div>
+
+        <div class="filter-section">
+            <h2 class="section-title">
+                <i class="fas fa-ban"></i> Виключені ключові слова
+            </h2>
+            <div class="filter-list" id="excluded-keywords">
+                <div class="filter-item active">
+                    <span class="filter-text">✉️ PULSE &lt;admin@rideatom.com&gt;</span>
+                    <button class="btn btn-danger" onclick="removeFilter('keyword', '✉️ PULSE <admin@rideatom.com>')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="filter-item active">
+                    <span class="filter-text">Alert! Subaccount:</span>
+                    <button class="btn btn-danger" onclick="removeFilter('keyword', 'Alert! Subaccount:')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="filter-item active">
+                    <span class="filter-text">Vehicle number</span>
+                    <button class="btn btn-danger" onclick="removeFilter('keyword', 'Vehicle number')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="add-filter">
+                <input type="text" class="filter-input" id="new-keyword" placeholder="Введіть ключове слово для блокування">
+                <button class="btn btn-primary" onclick="addFilter('keyword')">
+                    <i class="fas fa-plus"></i> Додати
+                </button>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <div class="info-title">
+                <i class="fas fa-info-circle"></i> Інформація про фільтри
+            </div>
+            <ul style="margin-left: 1rem; color: #374151;">
+                <li>Виключені користувачі - повідомлення від цих користувачів не будуть відображатися в системі</li>
+                <li>Виключені ключові слова - повідомлення, що містять ці фрази, будуть автоматично відфільтровані</li>
+                <li>Фільтри застосовуються в реальному часі до всіх нових повідомлень</li>
+                <li>Зміни зберігаються автоматично</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+            // {% if error_message %}
+            //     showNotification("{{ error_message }}", "error");
+            // {% endif %}
+        function addFilter(type) {
+            const inputId = type === 'user' ? 'new-user' : 'new-keyword';
+            const input = document.getElementById(inputId);
+            const value = input.value.trim();
+            
+            if (!value) return;
+            
+            // TODO: Відправити запит на сервер для додавання фільтра
+            console.log(`Додаємо ${type} фільтр:`, value);
+            
+            input.value = '';
+        }
+        
+        function removeFilter(type, value) {
+            // TODO: Відправити запит на сервер для видалення фільтра
+            console.log(`Видаляємо ${type} фільтр:`, value);
+        }
+                function updateFavicon() {
+        const now = new Date();
+        const hour = now.getHours();
+        const isDayShift = hour >= 9 && hour < 21;
+        
+        // Создаем canvas для рисования favicon
+        const canvas = document.createElement('canvas');
+        canvas.width = 32;
+        canvas.height = 32;
+        const ctx = canvas.getContext('2d');
+        
+        // Очищаем canvas
+        ctx.clearRect(0, 0, 32, 32);
+        
+        if (isDayShift) {
+            // Дневной favicon (светлый фон, оранжевая молния)
+            // Фон
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(16, 16, 15, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Молния (оранжевая)
+            const gradient = ctx.createLinearGradient(0, 0, 32, 32);
+            gradient.addColorStop(0, '#fbbf24');
+            gradient.addColorStop(1, '#f59e0b');
+            
+            ctx.fillStyle = gradient;
+            ctx.strokeStyle = '#d97706';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(20, 4);
+            ctx.lineTo(12, 16);
+            ctx.lineTo(16, 16);
+            ctx.lineTo(12, 28);
+            ctx.lineTo(20, 16);
+            ctx.lineTo(16, 16);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        } else {
+            // Ночной favicon (темный фон, синяя молния)
+            // Фон
+            ctx.fillStyle = '#1f2937';
+            ctx.strokeStyle = '#374151';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(16, 16, 15, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Молния (синяя)
+            const gradient = ctx.createLinearGradient(0, 0, 32, 32);
+            gradient.addColorStop(0, '#4f46e5');
+            gradient.addColorStop(1, '#3730a3');
+            
+            ctx.fillStyle = gradient;
+            ctx.strokeStyle = '#6366f1';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(20, 4);
+            ctx.lineTo(12, 16);
+            ctx.lineTo(16, 16);
+            ctx.lineTo(12, 28);
+            ctx.lineTo(20, 16);
+            ctx.lineTo(16, 16);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+        
+        // Конвертируем canvas в data URL
+        const dataUrl = canvas.toDataURL('image/png');
+        
+        // Обновляем или создаем link элемент для favicon
+        let link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+        link.type = 'image/png';
+        link.rel = 'shortcut icon';
+        link.href = dataUrl;
+        
+        if (!document.querySelector("link[rel*='icon']")) {
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }
+    }
+
+    // Обновляем favicon при загрузке страницы
+    document.addEventListener('DOMContentLoaded', updateFavicon);
+
+    // Обновляем favicon каждые 5 минут
+    setInterval(updateFavicon, 5 * 60 * 1000);
+
+    // Обновляем favicon при изменении видимости страницы (возврат на вкладку)
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            updateFavicon();
+        }
+    });
+    
+    </script>
+</body>
+</html>

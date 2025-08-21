@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вхід - PulseAi Support</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo i {
+            font-size: 3rem;
+            color: #4f46e5;
+            margin-bottom: 1rem;
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo p {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.1);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 0.875rem 1.5rem;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .error-message {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #dc2626;
+            font-size: 0.9rem;
+        }
+
+        .demo-accounts {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .demo-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .demo-account {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+            font-size: 0.8rem;
+        }
+
+        .demo-account:last-child {
+            border-bottom: none;
+        }
+
+        .demo-role {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .demo-credentials {
+            color: #64748b;
+            font-family: monospace;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                margin: 1rem;
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <i class="fas fa-bolt"></i>
+            <h1>PulseAi Support</h1>
+            <p>Система підтримки користувачів</p>
+        </div>
+
+        {% if error %}
+        <div class="error-message">
+            <i class="fas fa-exclamation-triangle"></i> {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="post" action="/login">
+            <div class="form-group">
+                <label class="form-label" for="username">
+                    <i class="fas fa-user"></i> Користувач
+                </label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    name="username" 
+                    class="form-input" 
+                    placeholder="Введіть логін" 
+                    required
+                    autocomplete="username"
+                >
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password">
+                    <i class="fas fa-lock"></i> Пароль
+                </label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    class="form-input" 
+                    placeholder="Введіть пароль" 
+                    required
+                    autocomplete="current-password"
+                >
+            </div>
+
+            <button type="submit" class="login-btn">
+                <i class="fas fa-sign-in-alt"></i> Увійти
+            </button>
+        </form>
+
+        <div class="demo-accounts">
+            <div class="demo-title">
+                <i class="fas fa-info-circle"></i>
+                Тестові акаунти:
+            </div>
+            <div class="demo-account">
+                <span class="demo-role">Адміністратор:</span>
+                <span class="demo-credentials">admin / pulse2024</span>
+            </div>
+            <div class="demo-account">
+                <span class="demo-role">Оператор:</span>
+                <span class="demo-credentials">operator / support123</span>
+            </div>
+            <div class="demo-account">
+                <span class="demo-role">Перегляд:</span>
+                <span class="demo-credentials">viewer / view123</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            © 2024 PulseAi Support System
+        </div>
+    </div>
+
+    <script>
+        // Автофокус на поле логина
+        document.getElementById('username').focus();
+        
+                const now = new Date();
+        const hour = now.getHours();
+        const isDayShift = hour >= 9 && hour < 21;
+        
+        // Создаем canvas для рисования favicon
+        const canvas = document.createElement('canvas');
+        canvas.width = 32;
+        canvas.height = 32;
+        const ctx = canvas.getContext('2d');
+        
+        // Очищаем canvas
+        ctx.clearRect(0, 0, 32, 32);
+        
+        if (isDayShift) {
+            // Дневной favicon (светлый фон, оранжевая молния)
+            // Фон
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(16, 16, 15, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Молния (оранжевая)
+            const gradient = ctx.createLinearGradient(0, 0, 32, 32);
+            gradient.addColorStop(0, '#fbbf24');
+            gradient.addColorStop(1, '#f59e0b');
+            
+            ctx.fillStyle = gradient;
+            ctx.strokeStyle = '#d97706';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(20, 4);
+            ctx.lineTo(12, 16);
+            ctx.lineTo(16, 16);
+            ctx.lineTo(12, 28);
+            ctx.lineTo(20, 16);
+            ctx.lineTo(16, 16);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        } else {
+            // Ночной favicon (темный фон, синяя молния)
+            // Фон
+            ctx.fillStyle = '#1f2937';
+            ctx.strokeStyle = '#374151';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(16, 16, 15, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Молния (синяя)
+            const gradient = ctx.createLinearGradient(0, 0, 32, 32);
+            gradient.addColorStop(0, '#4f46e5');
+            gradient.addColorStop(1, '#3730a3');
+            
+            ctx.fillStyle = gradient;
+            ctx.strokeStyle = '#6366f1';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(20, 4);
+            ctx.lineTo(12, 16);
+            ctx.lineTo(16, 16);
+            ctx.lineTo(12, 28);
+            ctx.lineTo(20, 16);
+            ctx.lineTo(16, 16);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+        
+        // Конвертируем canvas в data URL
+        const dataUrl = canvas.toDataURL('image/png');
+        
+        // Обновляем или создаем link элемент для favicon
+        let link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+        link.type = 'image/png';
+        link.rel = 'shortcut icon';
+        link.href = dataUrl;
+        
+        if (!document.querySelector("link[rel*='icon']")) {
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }
+    
+
+    // Обновляем favicon при загрузке страницы
+    document.addEventListener('DOMContentLoaded', updateFavicon);
+
+    // Обновляем favicon каждые 5 минут
+    setInterval(updateFavicon, 5 * 60 * 1000);
+
+    // Обновляем favicon при изменении видимости страницы (возврат на вкладку)
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            updateFavicon();
+        }
+    });
+    </script>
+</body>
+</html>

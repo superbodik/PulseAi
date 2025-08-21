@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аналітика - PulseAi Support</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4f46e5;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-link {
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            color: #64748b;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: #4f46e5;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .chart-canvas {
+            max-height: 300px;
+        }
+
+        .response-times {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .response-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 4px solid #e5e7eb;
+        }
+
+        .response-item.fast {
+            border-left-color: #10b981;
+        }
+
+        .response-item.medium {
+            border-left-color: #f59e0b;
+        }
+
+        .response-item.slow {
+            border-left-color: #ef4444;
+        }
+
+        .time-period-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            justify-content: center;
+        }
+
+        .period-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .period-btn.active {
+            background: #4f46e5;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <i class="fas fa-bolt"></i> PulseAi Support
+        </div>
+        <div class="nav-menu">
+            <a href="/" class="nav-link">
+                <i class="fas fa-home"></i> Головна
+            </a>
+            <a href="/stats" class="nav-link">
+                <i class="fas fa-chart-bar"></i> Статистика
+            </a>
+            <a href="/analytics" class="nav-link active">
+                <i class="fas fa-analytics"></i> Аналітика
+            </a>
+            <a href="/filters" class="nav-link">
+                <i class="fas fa-filter"></i> Фільтри
+            </a>
+            <span class="nav-link">
+                <i class="fas fa-user"></i> {{ user.display_name if user else 'User' }}
+            </span>
+            <a href="/logout" class="nav-link" style="background: #ef4444; color: white;">
+                <i class="fas fa-sign-out-alt"></i> Вихід
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="fas fa-chart-line"></i> Аналітика продуктивності
+            </h1>
+            <p style="color: #64748b;">Детальний аналіз роботи службы підтримки</p>
+        </div>
+
+        <div class="time-period-selector">
+            <button class="period-btn active" onclick="changePeriod('today')">Сьогодні</button>
+            <button class="period-btn" onclick="changePeriod('week')">Тиждень</button>
+            <button class="period-btn" onclick="changePeriod('month')">Місяць</button>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-value" style="color: #10b981;" id="total-messages">247</div>
+                <div class="metric-label">Всього повідомлень</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" style="color: #3b82f6;" id="avg-response-time">2.3 хв</div>
+                <div class="metric-label">Середній час відповіді</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" style="color: #f59e0b;" id="active-operators">3</div>
+                <div class="metric-label">Активних операторів</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" style="color: #8b5cf6;" id="satisfaction-rate">94%</div>
+                <div class="metric-label">Рівень задоволеності</div>
+            </div>
+        </div>
+
+        <div class="charts-section">
+            <div class="chart-container">
+                <h3 class="chart-title">Повідомлення за годинами</h3>
+                <canvas id="hourlyChart" class="chart-canvas"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3 class="chart-title">Розподіл типів запитів</h3>
+                <canvas id="requestTypesChart" class="chart-canvas"></canvas>
+            </div>
+        </div>
+
+        <div class="response-times">
+            <h3 class="chart-title">Часи відповіді операторів</h3>
+            <div class="response-item fast">
+                <span><i class="fas fa-user"></i> Administrator</span>
+                <span><strong>1.8 хв</strong> середній час</span>
+            </div>
+            <div class="response-item medium">
+                <span><i class="fas fa-user"></i> Support Operator</span>
+                <span><strong>2.5 хв</strong> середній час</span>
+            </div>
+            <div class="response-item fast">
+                <span><i class="fas fa-user"></i> Viewer</span>
+                <span><strong>2.1 хв</strong> середній час</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // График сообщений по часам
+        const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+        const hourlyChart = new Chart(hourlyCtx, {
+            type: 'line',
+            data: {
+                labels: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00'],
+                datasets: [{
+                    label: 'Повідомлення',
+                    data: [5, 2, 8, 25, 35, 42, 28, 15],
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // График типов запросов
+        const requestTypesCtx = document.getElementById('requestTypesChart').getContext('2d');
+        const requestTypesChart = new Chart(requestTypesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Технічна підтримка', 'Питання по продукту', 'Скарги', 'Загальні'],
+                datasets: [{
+                    data: [45, 30, 15, 10],
+                    backgroundColor: [
+                        '#4f46e5',
+                        '#10b981',
+                        '#f59e0b',
+                        '#ef4444'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        function changePeriod(period) {
+            // Убираем активный класс со всех кнопок
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Добавляем активный класс на выбранную кнопку
+            event.target.classList.add('active');
+            
+            // TODO: Загрузить данные для выбранного периода
+            console.log('Changing period to:', period);
+        }
+
+        // Автообновление данных каждые 30 секунд
+        setInterval(updateAnalytics, 30000);
+
+        function updateAnalytics() {
+            fetch('/api/analytics')
+                .then(response => response.json())
+                .then(data => {
+                    // Обновляем метрики
+                    document.getElementById('total-messages').textContent = data.total_messages || '247';
+                    document.getElementById('avg-response-time').textContent = data.avg_response_time || '2.3 хв';
+                    document.getElementById('active-operators').textContent = data.active_operators || '3';
+                    document.getElementById('satisfaction-rate').textContent = data.satisfaction_rate || '94%';
+                })
+                .catch(error => console.error('Ошибка обновления аналитики:', error));
+        }
+                function updateFavicon() {
+        const now = new Date();
+        const hour = now.getHours();
+        const isDayShift = hour >= 9 && hour < 21;
+        
+        // Создаем canvas для рисования favicon
+        const canvas = document.createElement('canvas');
+        canvas.width = 32;
+        canvas.height = 32;
+        const ctx = canvas.getContext('2d');
+        
+        // Очищаем canvas
+        ctx.clearRect(0, 0, 32, 32);
+        
+        if (isDayShift) {
+            // Дневной favicon (светлый фон, оранжевая молния)
+            // Фон
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(16, 16, 15, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Молния (оранжевая)
+            const gradient = ctx.createLinearGradient(0, 0, 32, 32);
+            gradient.addColorStop(0, '#fbbf24');
+            gradient.addColorStop(1, '#f59e0b');
+            
+            ctx.fillStyle = gradient;
+            ctx.strokeStyle = '#d97706';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(20, 4);
+            ctx.lineTo(12, 16);
+            ctx.lineTo(16, 16);
+            ctx.lineTo(12, 28);
+            ctx.lineTo(20, 16);
+            ctx.lineTo(16, 16);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        } else {
+            // Ночной favicon (темный фон, синяя молния)
+            // Фон
+            ctx.fillStyle = '#1f2937';
+            ctx.strokeStyle = '#374151';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(16, 16, 15, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Молния (синяя)
+            const gradient = ctx.createLinearGradient(0, 0, 32, 32);
+            gradient.addColorStop(0, '#4f46e5');
+            gradient.addColorStop(1, '#3730a3');
+            
+            ctx.fillStyle = gradient;
+            ctx.strokeStyle = '#6366f1';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(20, 4);
+            ctx.lineTo(12, 16);
+            ctx.lineTo(16, 16);
+            ctx.lineTo(12, 28);
+            ctx.lineTo(20, 16);
+            ctx.lineTo(16, 16);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+        
+        // Конвертируем canvas в data URL
+        const dataUrl = canvas.toDataURL('image/png');
+        
+        // Обновляем или создаем link элемент для favicon
+        let link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+        link.type = 'image/png';
+        link.rel = 'shortcut icon';
+        link.href = dataUrl;
+        
+        if (!document.querySelector("link[rel*='icon']")) {
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }
+    }
+
+    // Обновляем favicon при загрузке страницы
+    document.addEventListener('DOMContentLoaded', updateFavicon);
+
+    // Обновляем favicon каждые 5 минут
+    setInterval(updateFavicon, 5 * 60 * 1000);
+
+    // Обновляем favicon при изменении видимости страницы (возврат на вкладку)
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            updateFavicon();
+        }
+    });
+    </script>
+</body>
+</html>
