@@ -312,11 +312,11 @@ def get_users():
         return cur.fetchall()
 
 
-def add_message(user_id: int, content: str):
+def add_message(user, message, chat_id=None, timestamp=None, extra=None):
     """Добавить сообщение"""
     with sqlite3.connect(DB_FILE) as conn:
         cur = conn.cursor()
-        cur.execute("INSERT INTO messages (user_id, content) VALUES (?, ?)", (user_id, content))
+        cur.execute("INSERT INTO messages (user_id, content) VALUES (?, ?)", (user, message))
         conn.commit()
 
 
@@ -335,4 +335,5 @@ def get_messages(limit: int = 50):
 
 # Инициализируем БД при импорте
 init_database()
+
 load_filters_config()
